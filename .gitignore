@@ -1,0 +1,3 @@
+**/*.lint
+**/*.status
+**/__pycache__
