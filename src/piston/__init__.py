@@ -184,11 +184,6 @@ class Piston:
       Merge(self),
     ]
 
-  @property
-  def controls(self):
-    '''The controls enabled when evaluating.'''
-    return self.__controls
-
   def eval(self, exp, **kwargs):
     '''Evaluate Python expression safely.'''
     evaluate = simpleeval.EvalWithCompoundTypes(**kwargs)

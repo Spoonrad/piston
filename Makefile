@@ -1,3 +1,4 @@
+PYTHON:=python3
 PYLINT:=pylint
 VERBOSE:=0
 
@@ -12,7 +13,7 @@ check-docstring: $(patsubst %.py,%.status,$(SOURCES))
 lint: $(patsubst %.py,%.lint,$(SOURCES))
 
 %.status: %.py $(SOURCES)
-	python3 -m doctest $(VERBOSE_FLAG) $< && echo "$$?" > $@
+	$(PYTHON) -m doctest $(VERBOSE_FLAG) $< && echo "$$?" > $@
 
 %.lint: %.py
 	$(PYLINT) --rcfile lint.rc $(VERBOSE_FLAG) $< && echo "$$?" > $@

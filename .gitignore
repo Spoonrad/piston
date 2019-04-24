@@ -1,3 +1,4 @@
 **/*.lint
 **/*.status
 **/__pycache__
+.coverage

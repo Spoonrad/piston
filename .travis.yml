@@ -4,4 +4,6 @@ python:
 install:
   - "pip install -r requirements.txt"
 script:
-  - make check
+  - make PYTHON='coverage run --append --include=src/*' check
+after_success:
+  - coveralls
