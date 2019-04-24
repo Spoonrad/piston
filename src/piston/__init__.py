@@ -122,12 +122,31 @@ class If(KeyControl):
     else:
       return else_
 
+class Format(Control):
+
+  '''Expand literal strings using Python format.
+
+  >>> piston('some {value}', context={'value': 'thing'})
+  'some thing'
+  '''
+
+  def __init__(self, piston):
+    super().__init__('for', piston=piston)
+
+  def match(self, python):
+    return python if isinstance(python, str) else None
+
+  def apply(self, python, match, context=None):
+    return match.format(**(context or {}))
+
+
 class Piston:
 
   '''The main driver for evaluating Piston expressions.'''
 
   def __init__(self):
     self.__controls = [
+      Format(self),
       If(self),
       Merge(self),
     ]
@@ -136,6 +155,11 @@ class Piston:
   def controls(self):
     '''The controls enabled when evaluating.'''
     return self.__controls
+
+  def eval(self, exp, **kwargs):
+    '''Evaluate Python expression safely.'''
+    evaluate = simpleeval.EvalWithCompoundTypes(**kwargs)
+    return evaluate.eval(exp)
 
   def apply(self, python, context=None):
     '''Evaluate a Piston expression.'''
