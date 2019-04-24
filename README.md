@@ -1,5 +1,7 @@
 # Piston is a self-templating markup format.
 
+[![Build Status](https://travis-ci.org/mefyl/piston.svg?branch=master)](https://travis-ci.org/mefyl/piston)
+
 Piston syntax inserts meta-controls inside python basic objects that
 can be evaluated to new objects. It is intended to be used in literal
 markup languages such as JSON or Yaml that can then easily be
