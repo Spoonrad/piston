@@ -1,4 +1,4 @@
-# Piston is a self-templating markup format.
+# Piston is a self-templating markup format
 
 [![Build Status](https://travis-ci.org/mefyl/piston.svg?branch=master)](https://travis-ci.org/mefyl/piston) [![Coverage Status](https://coveralls.io/repos/github/mefyl/piston/badge.svg?branch=master)](https://coveralls.io/github/mefyl/piston?branch=master)
 
@@ -41,3 +41,18 @@ Expressions are traversed through built-in collections.
 [0, {'foo': ['1']}, 2]
 
 ```
+
+## Controls
+
+All controls inherit from `piston.Control` and are documented directly
+in python docstrings.
+
+    * literal strings are expanded through `str.format`.
+    * `$for` and `$in`: Repeat an object for each element of a collection.
+    * `$if`, `$then`, `$else`: Conditionally include a value or another.
+    * `$merge`: Merge a dictionary inside its parent.
+
+## Context
+
+A context can be passed containing variables accessible in python
+expressions.
