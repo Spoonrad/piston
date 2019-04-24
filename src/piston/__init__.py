@@ -4,7 +4,9 @@ import abc
 import ast
 import collections
 import collections.abc
-import itertools
+
+from itertools import chain
+
 import simpleeval
 
 def _specialize(name):
@@ -71,7 +73,7 @@ class Merge(KeyControl):
 
   def apply(self, python, match, context=None):
     return _SortedDict(#python.__class__(
-      itertools.chain(python.items(), self.piston.apply(match).items()))
+      chain(python.items(), self.piston.apply(match).items()))
 
 class If(KeyControl):
 
@@ -122,6 +124,36 @@ class If(KeyControl):
     else:
       return else_
 
+class For(KeyControl):
+
+  '''A key control that instatiate the current value for all items in a collection.
+
+  >>> piston({'$for': 'i', '$in': '[0, 1, 2, 3]', 'a': '{i}'})
+  [{'a': '0'}, {'a': '1'}, {'a': '2'}, {'a': '3'}]
+
+  The '$in' key is required:
+
+  >>> piston({'$for': '[]'})
+  Traceback (most recent call last):
+  ...
+  Exception: missing $in
+
+  '''
+
+  def __init__(self, piston):
+    super().__init__('for', piston=piston)
+
+  def apply(self, python, match, context=None):
+    in_ = python.pop(_specialize('in'), None)
+    if in_ is None:
+      raise Exception('missing $in')
+    return [
+      self.piston.apply(
+        python, context=dict(chain([(match, v)], context.items if context is not None else [])))
+      for v in self.piston.eval(in_, names=context)
+    ]
+
+
 class Format(Control):
 
   '''Expand literal strings using Python format.
@@ -146,6 +178,7 @@ class Piston:
 
   def __init__(self):
     self.__controls = [
+      For(self),
       Format(self),
       If(self),
       Merge(self),
