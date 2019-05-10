@@ -1,4 +1,5 @@
 coverage
+jinja2
 pylint
 python-coveralls
 simpleeval

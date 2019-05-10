@@ -130,7 +130,7 @@ class For(KeyControl):
 
   '''A key control that instantiate the current value for all items in a collection.
 
-  >>> piston({'$for': 'i', '$in': '[0, 1, 2, 3]', 'a': '{i}'})
+  >>> piston({'$for': 'i', '$in': '[0, 1, 2, 3]', '$do': {'a': '{i}'}})
   [{'a': '0'}, {'a': '1'}, {'a': '2'}, {'a': '3'}]
 
   The '$in' key is required:
@@ -147,11 +147,12 @@ class For(KeyControl):
 
   def apply(self, python, match, context=None):
     in_ = python.pop(_specialize('in'), None)
+    do_ = python.pop(_specialize('do'), python)
     if in_ is None:
       raise Exception('missing $in')
     return [
       self.piston.apply(
-        copy.deepcopy(python),
+        copy.deepcopy(do_),
         context=dict(chain([(match, v)], context.items() if context is not None else [])))
       for v in self.piston.eval(in_, names=context)
     ]
@@ -206,7 +207,7 @@ class Format(Control):
   '''
 
   def __init__(self, piston):
-    super().__init__('for', piston=piston)
+    super().__init__('format', piston=piston)
 
   def match(self, python):
     return python if isinstance(python, str) else None
@@ -219,14 +220,17 @@ class Piston:
 
   '''The main driver for evaluating Piston expressions.'''
 
-  def __init__(self):
-    self.__controls = [
-      Chain(self),
-      For(self),
-      Format(self),
-      If(self),
-      Merge(self),
-    ]
+  def __init__(self, controls=None):
+    if controls is None:
+      self.__controls = [
+        Chain(self),
+        For(self),
+        Format(self),
+        If(self),
+        Merge(self),
+      ]
+    else:
+      self.__controls = [C(self) for C in controls]
 
   def eval(self, exp, **kwargs):
     '''Evaluate Python expression safely.'''
