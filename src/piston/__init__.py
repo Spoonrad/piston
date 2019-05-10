@@ -157,6 +157,46 @@ class For(KeyControl):
     ]
 
 
+class Chain(KeyControl):
+
+  '''A key control that concatenates a list of lists into a single list.
+
+  >>> piston({'$chain': [[0, 1], [2, 3]]})
+  [0, 1, 2, 3]
+
+  If an element is not a list, it is kept as-is:
+
+  >>> piston({'$chain': [0, [1, 2], 3]})
+  [0, 1, 2, 3]
+
+  Argument must be a list:
+
+  >>> piston({'$chain': 42})
+  Traceback (most recent call last):
+  ...
+  Exception: $chain argument must be a list, not a int
+
+  No other key may be added:
+
+  >>> piston({'$chain': [], 'foo': 0})
+  Traceback (most recent call last):
+  ...
+  Exception: superfluous key 'foo'
+
+  '''
+
+  def __init__(self, piston):
+    super().__init__('chain', piston=piston)
+
+  def apply(self, python, match, context=None):
+    if not isinstance(match, list):
+      raise Exception('$chain argument must be a list, not a {}'.format(match.__class__.__name__))
+    for k in python:
+      raise Exception('superfluous key {!r}'.format(k))
+    match = self.piston.apply(match, context=context)
+    return list(chain(*(
+      v if isinstance(v, list) else [v] for v in match)))
+
 class Format(Control):
 
   '''Expand literal strings using Python format.
@@ -181,6 +221,7 @@ class Piston:
 
   def __init__(self):
     self.__controls = [
+      Chain(self),
       For(self),
       Format(self),
       If(self),
