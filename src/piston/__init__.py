@@ -4,6 +4,7 @@ import abc
 import ast
 import collections
 import collections.abc
+import copy
 
 from itertools import chain
 
@@ -124,9 +125,10 @@ class If(KeyControl):
     else:
       return self.piston.apply(else_, context=context)
 
+
 class For(KeyControl):
 
-  '''A key control that instatiate the current value for all items in a collection.
+  '''A key control that instantiate the current value for all items in a collection.
 
   >>> piston({'$for': 'i', '$in': '[0, 1, 2, 3]', 'a': '{i}'})
   [{'a': '0'}, {'a': '1'}, {'a': '2'}, {'a': '3'}]
@@ -149,7 +151,8 @@ class For(KeyControl):
       raise Exception('missing $in')
     return [
       self.piston.apply(
-        python, context=dict(chain([(match, v)], context.items if context is not None else [])))
+        copy.deepcopy(python),
+        context=dict(chain([(match, v)], context.items() if context is not None else [])))
       for v in self.piston.eval(in_, names=context)
     ]
 
@@ -216,4 +219,4 @@ def piston(python, context=None):
 
   '''
   piston = Piston()
-  return piston.apply(python, context=context)
+  return piston.apply(copy.deepcopy(python), context=context)
