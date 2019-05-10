@@ -239,6 +239,7 @@ class Piston:
 
   def apply(self, python, context=None):
     '''Evaluate a Piston expression.'''
+    python = copy.deepcopy(python)
     for ctrl in self.__controls:
       match = ctrl.match(python)
       if match is not None:
@@ -264,4 +265,4 @@ def piston(python, context=None):
 
   '''
   piston = Piston()
-  return piston.apply(copy.deepcopy(python), context=context)
+  return piston.apply(python, context=context)
