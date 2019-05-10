@@ -120,9 +120,9 @@ class If(KeyControl):
     then = python.pop(_specialize('then'), None)
     else_ = python.pop(_specialize('else'), None)
     if simpleeval.simple_eval(match, names=context or {}):
-      return then
+      return self.piston.apply(then, context=context)
     else:
-      return else_
+      return self.piston.apply(else_, context=context)
 
 class For(KeyControl):
 
