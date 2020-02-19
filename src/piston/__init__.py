@@ -171,14 +171,9 @@ class For(KeyControl):
 
 class Chain(KeyControl):
 
-  """A key control that concatenates a list of lists into a single list.
+  """A key control that concatenates a list of values.
 
   >>> piston({'$chain': [[0, 1], [2, 3]]})
-  [0, 1, 2, 3]
-
-  If an element is not a list, it is kept as-is:
-
-  >>> piston({'$chain': [0, [1, 2], 3]})
   [0, 1, 2, 3]
 
   Argument must be a list:
@@ -210,7 +205,7 @@ class Chain(KeyControl):
     for k in python:
       raise Exception("superfluous key {!r}".format(k))
     match = self.piston.apply(match, context=context)
-    return list(chain(*(v if isinstance(v, list) else [v] for v in match)))
+    return sum(match[1:], match[0])
 
 
 class Format(Control):
