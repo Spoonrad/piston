@@ -45,7 +45,7 @@ class Control(abc.ABC, metaclass=abc.ABCMeta):
     """Whether this control triggers on the given Python object."""
 
   @abc.abstractmethod
-  def apply(self, python, match, context=None):
+  def apply(self, python, match, context=None, functions=None):
     """Execute on the given matched Python object."""
 
 
@@ -78,7 +78,9 @@ class Merge(KeyControl):
   def __init__(self, piston):
     super().__init__("merge", piston=piston)
 
-  def apply(self, python, match, context=None):
+  def apply(self, python, match, context=None, functions=None):
+    if not functions:
+      functions = {}
     return _SortedDict(  # python.__class__(
       chain(python.items(), self.piston.apply(match).items())
     )
@@ -123,15 +125,15 @@ class If(KeyControl):
   def __init__(self, piston):
     super().__init__("if", piston=piston)
 
-  def apply(self, python, match, context=None):
+  def apply(self, python, match, context=None, functions=None):
     if not isinstance(match, str):
       raise Exception("condition must be a string")
     then = python.pop(_specialize("then"), None)
     else_ = python.pop(_specialize("else"), None)
-    if simpleeval.simple_eval(match, names=context or {}):
-      return self.piston.apply(then, context=context)
+    if simpleeval.simple_eval(match, names=context or {}, functions=functions or {}):
+      return self.piston.apply(then, context=context, functions=functions)
     else:
-      return self.piston.apply(else_, context=context)
+      return self.piston.apply(else_, context=context, functions=functions)
 
 
 class For(KeyControl):
@@ -153,7 +155,7 @@ class For(KeyControl):
   def __init__(self, piston):
     super().__init__("for", piston=piston)
 
-  def apply(self, python, match, context=None):
+  def apply(self, python, match, context=None, functions=None):
     in_ = python.pop(_specialize("in"), None)
     do_ = python.pop(_specialize("do"), python)
     if in_ is None:
@@ -165,7 +167,7 @@ class For(KeyControl):
           chain([(match, v)], context.items() if context is not None else [])
         ),
       )
-      for v in self.piston.eval(in_, names=context)
+      for v in self.piston.eval(in_, names=context, functions=functions)
     ]
 
 
@@ -195,7 +197,7 @@ class Chain(KeyControl):
   def __init__(self, piston):
     super().__init__("chain", piston=piston)
 
-  def apply(self, python, match, context=None):
+  def apply(self, python, match, context=None, functions=None):
     if not isinstance(match, list):
       raise Exception(
         "$chain argument must be a list, not a {}".format(
@@ -204,8 +206,11 @@ class Chain(KeyControl):
       )
     for k in python:
       raise Exception("superfluous key {!r}".format(k))
-    match = self.piston.apply(match, context=context)
-    return sum(match[1:], match[0])
+    match = self.piston.apply(match, context=context, functions=functions)
+    if isinstance(match[0], str):
+      return ''.join(match)
+    else:
+      return list(chain(*(v if isinstance(v, list) else [v] for v in match)))
 
 
 class Format(Control):
@@ -222,7 +227,7 @@ class Format(Control):
   def match(self, python):
     return python if isinstance(python, str) else None
 
-  def apply(self, python, match, context=None):
+  def apply(self, python, match, context=None, functions=None):
     return match.format(**(context or {}))
 
 
@@ -247,26 +252,26 @@ class Piston:
     evaluate = simpleeval.EvalWithCompoundTypes(**kwargs)
     return evaluate.eval(exp)
 
-  def apply(self, python, context=None):
+  def apply(self, python, context=None, functions=None):
     """Evaluate a Piston expression."""
     python = copy.deepcopy(python)
     for ctrl in self.__controls:
       match = ctrl.match(python)
       if match is not None:
-        return ctrl.apply(python, match, context=context)
+        return ctrl.apply(python, match, context=context, functions=functions)
     if isinstance(python, collections.abc.Mapping):
       return _SortedDict(  # python.__class__(
-        (k, self.apply(v, context)) for k, v in python.items()
+        (k, self.apply(v, context, functions)) for k, v in python.items()
       )
     elif isinstance(python, collections.abc.Collection) and not isinstance(
       python, str
     ):
-      return python.__class__(self.apply(v, context) for v in python)
+      return python.__class__(self.apply(v, context, functions) for v in python)
     else:
       return python
 
 
-def piston(python, context=None):
+def piston(python, context=None, functions=None):
   """Evaluate a Piston value.
 
   Basic python values evaluate to themselves:
@@ -278,4 +283,4 @@ def piston(python, context=None):
 
   """
   piston = Piston()
-  return piston.apply(python, context=context)
+  return piston.apply(python, context=context, functions=functions)
